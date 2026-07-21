@@ -29,3 +29,19 @@ def retrive_name_detail(name_id:int):
         if names["id"] ==  name_id:
             return names
     return {"detail": "object not found"}
+
+@app.put("/names/{item_id}")
+def names_update(item_id: int, name: str):
+    for n in names_db:
+        if n["id"] == item_id:
+            n["name"] = name
+            return {"message": f"Name with ID {item_id} updated successfully"}
+    return {"message": "Name not found"}
+
+@app.delete("/names/{names_id}")
+def delete_name(name_id:int):
+    for name in names_db:
+        if name["id"] == name_id:
+            names_db.remove(name)
+            return {"detail": f"object with {name_id} removed successfully"}
+    return {"detail": "object not found"}
