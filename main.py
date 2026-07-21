@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import random
+from typing import Optional
 
 app = FastAPI()
 
@@ -14,7 +15,11 @@ names_db = [
 ]
 
 @app.get("/names")
-def names_list():
+#def names_list(q | None = Query(default=None, max_length=50))
+def names_list(search: Optional[str] = None):
+    if search:
+        filtered_names = [name for name in names_db if search.lower() in name["name"].lower()]
+        return filtered_names
     return names_db
 
 @app.post("/names")
