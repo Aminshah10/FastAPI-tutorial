@@ -1,6 +1,5 @@
-from fastapi import FastAPI, status, HTTPException
 import random
-from typing import Optional
+from fastapi import FastAPI, HTTPException, status, Form, Path
 
 app = FastAPI()
 
@@ -19,7 +18,7 @@ names_db = [
 
 @app.get("/names")
 # def names_list(q | None = Query(default=None, max_length=50)) imort Query class from fastapi
-def names_list(search: Optional[str] = None):
+def names_list(search: str | None = None):
     if search:
         filtered_names = [
             name for name in names_db if search.lower() in name["name"].lower()
@@ -29,14 +28,18 @@ def names_list(search: Optional[str] = None):
 
 
 @app.post("/names", status_code=status.HTTP_201_CREATED)
-def create_name(name: str):
+def create_name(name: str = Form()):
     new_obj = {"id": random.randint(4, 100), "name": name}
     names_db.append(new_obj)
     return names_db
 
 
 @app.get("/names/{name_id}")
-def retrive_name_detail(name_id: int):
+def retrive_name_detail(
+    name_id: int = Path(
+        description="The id of the item to get", gt=0
+    ),
+):
     for names in names_db:
         if names["id"] == name_id:
             return names
