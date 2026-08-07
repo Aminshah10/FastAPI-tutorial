@@ -1,5 +1,5 @@
 import random
-from fastapi import FastAPI, HTTPException, status, Form, Path
+from fastapi import FastAPI, HTTPException, status, Body, Path, UploadFile
 
 app = FastAPI()
 
@@ -23,12 +23,15 @@ def names_list(search: str | None = None):
         filtered_names = [
             name for name in names_db if search.lower() in name["name"].lower()
         ]
-        return filtered_names
+        if filtered_names:
+            return filtered_names
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Name not found")
     return names_db
 
 
 @app.post("/names", status_code=status.HTTP_201_CREATED)
-def create_name(name: str = Form()):
+def create_name(name: str = Body(embed=True)):
     new_obj = {"id": random.randint(4, 100), "name": name}
     names_db.append(new_obj)
     return names_db
@@ -62,3 +65,16 @@ def delete_name(name_id: int):
             names_db.remove(name)
             return {"detail": f"object with {name_id} removed successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Name not found")
+
+
+@app.post("/uploadfile/")
+async def upload_file(file: UploadFile):
+    content = await file.read()
+    return {"filename": file.filename, "content_type": file.content_type, "file_size": len(content)}
+
+@app.post("/upload-multiple/")
+async def upload_multiple(files: list[UploadFile]):
+    return [
+        {"filename": file.filename, "content_type": file.content_type} 
+        for file in files
+    ]
