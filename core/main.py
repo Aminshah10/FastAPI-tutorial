@@ -1,6 +1,7 @@
 import random
 from fastapi import FastAPI, HTTPException, status, Body, Path, UploadFile
 from contextlib import asynccontextmanager
+from schemas import PersonCreateSchema, PersonResponseschema, PersonUpdateSchema
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -23,7 +24,7 @@ names_db = [
 ]
 
 
-@app.get("/names")
+@app.get("/names", response_model=list[PersonResponseschema])
 # def names_list(q | None = Query(default=None, max_length=50)) imort Query class from fastapi
 def names_list(search: str | None = None):
     if search:
@@ -37,9 +38,9 @@ def names_list(search: str | None = None):
     return names_db
 
 
-@app.post("/names", status_code=status.HTTP_201_CREATED)
-def create_name(name: str = Body(embed=True)):
-    new_obj = {"id": random.randint(4, 100), "name": name}
+@app.post("/names", status_code=status.HTTP_201_CREATED, response_model=list[PersonResponseschema])
+def create_name(person : PersonCreateSchema):
+    new_obj = {"id": random.randint(4, 100), "name": person.name}
     names_db.append(new_obj)
     return names_db
 
@@ -57,10 +58,10 @@ def retrive_name_detail(
 
 
 @app.put("/names/{item_id}", status_code=status.HTTP_200_OK)
-def names_update(item_id: int, name: str):
+def names_update(person : PersonUpdateSchema, item_id : int):
     for n in names_db:
         if n["id"] == item_id:
-            n["name"] = name
+            n["name"] = person.name
             return {"message": f"Name with ID {item_id} updated successfully"}
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Name not found")
 
