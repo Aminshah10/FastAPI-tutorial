@@ -1,5 +1,5 @@
 import random
-from fastapi import FastAPI, HTTPException, status, Body, Path, UploadFile
+from fastapi import FastAPI, HTTPException, status, Path, UploadFile
 from contextlib import asynccontextmanager
 from schemas import PersonCreateSchema, PersonResponseschema, PersonUpdateSchema
 
