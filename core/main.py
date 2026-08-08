@@ -1,7 +1,14 @@
 import random
 from fastapi import FastAPI, HTTPException, status, Body, Path, UploadFile
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Application startup")
+    yield
+    print("Application shutdown")
+    
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/")
