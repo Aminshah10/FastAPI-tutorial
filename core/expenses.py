@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Path, status
+from expense_schema import CreateExpenseSchema, UpdateExpenseSchema, ResponseExpenseSchema
 
 app = FastAPI()
 
@@ -16,12 +17,15 @@ expenses_db = {
 next_id = 3
 
 
-@app.get("/expenses")
+@app.get("/expenses", response_model=list[ResponseExpenseSchema])
 def get_all_expenses():
-    return expenses_db
+    return [
+    {"id": expense_id, **expense}
+    for expense_id, expense in expenses_db.items()
+    ]
 
 
-@app.get("/expenses/{expense_id}")
+@app.get("/expenses/{expense_id}", response_model=ResponseExpenseSchema)
 def get_expense(expense_id: int):
     if expense_id not in expenses_db:
         raise HTTPException(
@@ -29,21 +33,21 @@ def get_expense(expense_id: int):
             detail="No expense found with this id"
         )
 
-    return expenses_db[expense_id]
+    return {"id": expense_id, **expenses_db[expense_id]}
 
 
-@app.post("/expenses", status_code=status.HTTP_201_CREATED)
-def add_expense(description: str, amount: float):
+@app.post("/expenses", status_code=status.HTTP_201_CREATED, response_model=ResponseExpenseSchema)
+def add_expense(expense : CreateExpenseSchema):
     global next_id
 
     expenses_db[next_id] = {
-        "description": description,
-        "amount": amount
+        "description": expense.description,
+        "amount": expense.amount
     }
 
     next_id += 1
 
-    return expenses_db[next_id - 1]
+    return {"id": next_id - 1, **expenses_db[next_id-1]}
 
 
 @app.delete(
@@ -62,22 +66,18 @@ def delete_expense(
     del expenses_db[expense_id]
 
 
-@app.put("/expenses/{expense_id}")
-def update_expense(
-    expense_id: int = Path(description="The id of the expense to update", gt=0),
-    description: str | None = None,
-    amount: float | None = None
-):
+@app.put("/expenses/{expense_id}", response_model=ResponseExpenseSchema)
+def update_expense(expense : UpdateExpenseSchema, expense_id : int = Path(..., gt=0)):
     if expense_id not in expenses_db:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No expense found with this id"
         )
 
-    if description is not None:
-        expenses_db[expense_id]["description"] = description
+    if expense.description is not None:
+        expenses_db[expense_id]["description"] = expense.description
 
-    if amount is not None:
-        expenses_db[expense_id]["amount"] = amount
+    if expense.amount is not None:
+        expenses_db[expense_id]["amount"] = expense.amount
 
-    return expenses_db[expense_id]
+    return {"id": expense_id, **expenses_db[expense_id]}
