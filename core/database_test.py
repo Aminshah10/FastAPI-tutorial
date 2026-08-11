@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, or_, not_, and_
 from sqlalchemy.orm import sessionmaker,declarative_base
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./docs/database.db"
@@ -113,3 +113,17 @@ users_similar_name = session.query(User).filter(User.first_name.ilike("%ali%")).
 # users with starting and ending chars
 users_starting_ali = session.query(User).filter(User.first_name.like("Ali%")).all()
 users_ending_ali = session.query(User).filter(User.first_name.like("%Ali")).all()
+
+# query those who has ali as name or age above 25
+users_filtered = session.query(User).filter(or_(User.age >=25,User.first_name == "ali")).all()
+
+# query those who has ali as name and age above 25
+users_filtered = session.query(User).filter(and_(User.age >=25,User.first_name == "ali")).all()
+
+# query those whos name is not ali
+users_filtered = session.query(User).filter(not_(User.first_name == "ali")).all()
+
+# getting users which are note named ali or age between 35,60
+users = session.query(User).filter(or_(not_(User.first_name == "ali"),and_(User.age >35,User.age<60)))
+
+session.close()
