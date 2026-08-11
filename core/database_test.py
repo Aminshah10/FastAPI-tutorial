@@ -87,3 +87,29 @@ try:
 finally:
     # Always close the session when finished.
     session.close()
+    
+# all users
+users_all = session.query(User).all()
+
+# query all users with age greater than or equal to 25
+users_filtered = session.query(User).filter(User.age >=25).all()
+
+print("ALL Users: ", len(users_all))
+print("Filtered Users: ", len(users_filtered ))
+
+# add multiple filters
+# query all users with age greater than or equal to 25 and name equals to something
+users_filtered = session.query(User).filter(User.age >=25,User.first_name == "ali").all()
+
+# or you can use where
+users_filtered = session.query(User).where(User.age >=25,User.first_name == "ali").all()
+
+# users with similar name contianing specific substrings
+users_similar_name = session.query(User).filter(User.first_name.like("%ali%")).all()
+
+# users with case insensitive match
+users_similar_name = session.query(User).filter(User.first_name.ilike("%ali%")).all()
+
+# users with starting and ending chars
+users_starting_ali = session.query(User).filter(User.first_name.like("Ali%")).all()
+users_ending_ali = session.query(User).filter(User.first_name.like("%Ali")).all()
