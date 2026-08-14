@@ -3,6 +3,7 @@ from expense_schema import CreateExpenseSchema, UpdateExpenseSchema, ResponseExp
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from expense_database import Base, engine, get_db, Expense
+from typing import Annotated
 
 @asynccontextmanager
 async def lifespan(app : FastAPI):
@@ -13,28 +14,20 @@ async def lifespan(app : FastAPI):
     
 app = FastAPI(lifespan=lifespan)
 
-expenses_db = {
-    1: {
-        "description": "dinner",
-        "amount": 22.5
-    },
-    2: {
-        "description": "carwash",
-        "amount": 9.99
-    }
-}
+DbDependency = Annotated[Session, Depends(get_db)]
 
-next_id = 3
-
+@app.get("/")
+def hello_world():
+    return {"message": "Hello World"}
 
 @app.get("/expenses", response_model=list[ResponseExpenseSchema])
-def get_all_expenses(db: Session = Depends(get_db)):
+def get_all_expenses(db: DbDependency):
     result = db.query(Expense).all()
     return result
 
 
 @app.get("/expenses/{expense_id}", response_model=ResponseExpenseSchema)
-def get_expense(expense_id: int, db: Session = Depends(get_db)):
+def get_expense(expense_id: int, db: DbDependency = None):
     result = db.query(Expense).filter(Expense.id == expense_id).one_or_none()
     if result:
         return result
@@ -46,7 +39,7 @@ def get_expense(expense_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/expenses", status_code=status.HTTP_201_CREATED, response_model=ResponseExpenseSchema)
-def add_expense(expense : CreateExpenseSchema, db: Session = Depends(get_db)):
+def add_expense(expense : CreateExpenseSchema, db: DbDependency):
     new_expense = Expense(**expense.model_dump())
     db.add(new_expense)
     db.commit()
@@ -60,7 +53,7 @@ def add_expense(expense : CreateExpenseSchema, db: Session = Depends(get_db)):
 )
 def delete_expense(
     expense_id: int = Path(description="The id of the expense to delete", gt=0), 
-    db : Session = Depends(get_db)
+    db: DbDependency = None
 ):
     expense = db.query(Expense).filter(Expense.id == expense_id).one_or_none()
     
@@ -77,7 +70,7 @@ def delete_expense(
 @app.put("/expenses/{expense_id}", response_model=ResponseExpenseSchema)
 def update_expense(expense : UpdateExpenseSchema, 
                    expense_id : int = Path(..., gt=0), 
-                   db: Session = Depends(get_db)):
+                   db: DbDependency = None):
     result = db.query(Expense).filter(Expense.id == expense_id).one_or_none()
 
     if not result:
